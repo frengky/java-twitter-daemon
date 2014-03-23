@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project basedir="." default="help" name="console-logger">
+    <property environment="env"/>
+    <property name="target" value="1.6"/>
+    <property name="source" value="1.6"/>
+    <property name="twitter-daemon.version" value="1.0"/>
+
+    <path id="classpath">
+        <pathelement location="lib/log4j-1.2.17.jar"/>
+        <pathelement location="lib/slf4j-api-1.6.6.jar"/>
+        <pathelement location="lib/slf4j-log4j12-1.6.6.jar"/>
+        <pathelement location="lib/jansi-1.11.jar"/>
+        <pathelement location="lib/twitter4j-async-4.0.1.jar"/>
+        <pathelement location="lib/twitter4j-core-4.0.1.jar"/>
+        <pathelement location="lib/twitter4j-media-support-4.0.1.jar"/>
+        <pathelement location="lib/twitter4j-stream-4.0.1.jar"/>
+        <pathelement location="lib/mysql-connector-java-5.1.29-bin.jar"/>
+    </path>
+
+    <target name="init" />
+    <target name="clean">
+        <delete file="bin/twitter-daemon.jar"/>
+        <delete dir="twitter-daemon/bin"/>
+    </target>
+    <target name="compile" depends="clean">
+        <mkdir dir="twitter-daemon/bin" />
+        <javac debug="false" includeantruntime="false" srcdir="twitter-daemon/src" destdir="twitter-daemon/bin" source="${source}" target="${target}">
+            <classpath refid="classpath"/>
+        </javac>
+    </target>
+    <target name="build" depends="clean,compile">
+        <jar destfile="bin/twitter-daemon.jar" basedir="twitter-daemon/bin" />
+    </target>
+
+    <target name="help">
+        <echo message="Twitter Daemon Project"/>
+        <echo message="Java ${ant.java.version} ${os.arch}"/>
+    </target>
+</project>
