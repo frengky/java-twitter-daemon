@@ -4,11 +4,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Properties;
-
 import org.apache.log4j.Logger;
-
 import twitter4j.*;
-
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -24,13 +21,14 @@ public class TwitterStreamListener implements UserStreamListener {
 	}
 	
 	public void connectDatabase() {
-		String config = System.getProperty("dbconfig");
 		StringBuilder connString = new StringBuilder();
 		connString.append("jdbc:mysql://");
-		log.info("Reading database configuration from " + config);
+		
+		String myDbConfig = System.getProperty("dbconfig");
+		log.info("@" + myScreenName + ": MYSQL " + myDbConfig);
 		try {
 			Properties prop = new Properties();
-			prop.load(new FileInputStream(config));
+			prop.load(new FileInputStream(myDbConfig));
 			connString.append(prop.getProperty("mysql.host"));
 			connString.append("/");
 			connString.append(prop.getProperty("mysql.database"));
@@ -39,14 +37,13 @@ public class TwitterStreamListener implements UserStreamListener {
 			connString.append("&");
 			connString.append("password=" + prop.getProperty("mysql.password"));
 			dbTable = prop.getProperty("mysql.table");
-			log.info("Connection string " + connString.toString());
 			
 			Class.forName("com.mysql.jdbc.Driver").newInstance();
 			conn = DriverManager.getConnection(connString.toString());
 			
-			log.info("Database registered!");
+			log.info("@" + myScreenName + ": MYSQL " + connString.toString());
 		} catch(Exception e) {
-			log.error("Error building connection: " + e.toString());
+			log.error("@" + myScreenName + ": MYSQL EXCEPTION Error building database connection: " + e.toString());
 		}
 	}
 	
@@ -75,12 +72,12 @@ public class TwitterStreamListener implements UserStreamListener {
 
 			int affected = stmt.executeUpdate();
 			
-			log.info("MYSQL: INSERT statement returning " + affected + " affected row(s)");
+			log.info("@" + myScreenName + ": MYSQL INSERT: " + affected + " affected row(s)");
 			if(!stmt.isClosed()) {
 				stmt.close();
 			}
 		} catch(Exception e) {
-			log.error("MYSQL: Exception caught: " + e.getMessage());
+			log.error("@" + myScreenName + ": MYSQL EXCEPTION: " + e.getMessage());
 		} finally {
 			if(stmt != null) {
 				stmt = null;
@@ -99,7 +96,8 @@ public class TwitterStreamListener implements UserStreamListener {
     	int rtCount = status.getRetweetCount();
     	boolean isMentioned = false;
     	
-    	log.info("STREAM FROM: @" + screenName + " [name:"+name+"] [id:"+userId+"]");
+    	log.info("@"+myScreenName+": TWEET RECV [screenName:@"+screenName+"] [name:" + name + "] [id:" + userId + "]");
+    	log.info("@"+myScreenName+":       TEXT " + statusText);
     	
     	status.getUserMentionEntities();
     	UserMentionEntity[] entities = status.getUserMentionEntities();        	
@@ -111,20 +109,19 @@ public class TwitterStreamListener implements UserStreamListener {
         		}
     			mentions.add("@" + entity.getScreenName());
     		}
-        	log.info("STREAM MENTIONS: " + Twitter.join(mentions, ","));
+        	log.info("@"+myScreenName+":       MENT " + TwitterUtil.join(mentions, ","));
     	}
-    	log.info("STREAM RT: " + rtCount);
-    	log.info("STREAM TEXT: " + statusText);
+    	
+    	log.info("@"+myScreenName+":       RETW " + rtCount + " time(s)");
     	
     	if(isMentioned == true) {
-    		log.info("STREAM CATCH: @" + screenName + " is mentioning @" + myScreenName);
+    		log.info("@"+myScreenName+": TWEET RECV OK");
+    		insertToDb(userId, name, screenName, rtCount, statusText, status.getCreatedAt());
     	} else {
-    		log.info("STREAM CATCH: @" + screenName + " is NOT mentioning @" + myScreenName);
+    		log.info("@"+myScreenName+": TWEET RECV SKIP");
     	}
-    	
-    	insertToDb(userId, name, screenName, rtCount, statusText, status.getCreatedAt());
     }
-
+    
     @Override
     public void onDeletionNotice(StatusDeletionNotice statusDeletionNotice) {
     }
@@ -135,7 +132,7 @@ public class TwitterStreamListener implements UserStreamListener {
 
     @Override
     public void onTrackLimitationNotice(int numberOfLimitedStatuses) {
-    	log.warn("TRACK LIMIT: " + numberOfLimitedStatuses);
+    	log.warn("@"+myScreenName+": TRACK LIMIT " + numberOfLimitedStatuses);
     }
 
     @Override
@@ -144,7 +141,7 @@ public class TwitterStreamListener implements UserStreamListener {
 
     @Override
     public void onStallWarning(StallWarning warning) {
-    	log.warn("STALL: " + warning.getPercentFull() + "% (" + warning.getMessage() + ")");
+    	log.warn("@"+myScreenName+": STALL " + warning.getPercentFull() + "% (" + warning.getMessage() + ")");
     }
 
     @Override
@@ -214,6 +211,6 @@ public class TwitterStreamListener implements UserStreamListener {
     @Override
     public void onException(Exception ex) {
         // ex.printStackTrace();
-        // log.error("EXCEPTION: "  + ex.getMessage());
+        log.warn("@"+myScreenName+": EXCEPTION "  + ex.getMessage());
     }
 }
