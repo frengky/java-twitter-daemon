@@ -12,6 +12,8 @@ import java.sql.PreparedStatement;
 
 public class TwitterStreamListener implements UserStreamListener {
 	private static Logger log = Logger.getLogger(TwitterStreamListener.class);
+	private static Logger tweetLog = Logger.getLogger(Tweet.class);
+	
 	private Connection conn;
 	private String dbTable;
 	private String myScreenName;
@@ -96,15 +98,17 @@ public class TwitterStreamListener implements UserStreamListener {
     	int rtCount = status.getRetweetCount();
     	boolean isMentioned = false;
     	
-    	log.info("@"+myScreenName+": TWEET RECV [screenName:@"+screenName+"] [name:" + name + "] [id:" + userId + "]");
-    	log.info("@"+myScreenName+":       TEXT " + statusText);
+    	log.info("@"+myScreenName+": TWEET TEXT " + statusText);
+    	log.info("@"+myScreenName+":       FROM @"+screenName+" [name:" + name + "] [id:" + userId + "] [rt:" + rtCount + "]");
+    	
+    	tweetLog.info("@"+ myScreenName + ": @" + screenName + ": " + statusText);
     	
     	status.getUserMentionEntities();
-    	UserMentionEntity[] entities = status.getUserMentionEntities();        	
+    	UserMentionEntity[] entities = status.getUserMentionEntities();
     	if(entities.length > 0) {
         	ArrayList<String> mentions = new ArrayList<String>();
         	for(UserMentionEntity entity : entities) {
-        		if(entity.getScreenName() == myScreenName) {
+        		if(entity.getScreenName().toLowerCase() == myScreenName.toLowerCase()) {
         			isMentioned = true;
         		}
     			mentions.add("@" + entity.getScreenName());
@@ -112,13 +116,11 @@ public class TwitterStreamListener implements UserStreamListener {
         	log.info("@"+myScreenName+":       MENT " + TwitterUtil.join(mentions, ","));
     	}
     	
-    	log.info("@"+myScreenName+":       RETW " + rtCount + " time(s)");
-    	
     	if(isMentioned == true) {
-    		log.info("@"+myScreenName+": TWEET RECV OK");
+    		log.info("@"+myScreenName+":       SAVE YES");
     		insertToDb(userId, name, screenName, rtCount, statusText, status.getCreatedAt());
     	} else {
-    		log.info("@"+myScreenName+": TWEET RECV SKIP");
+    		log.info("@"+myScreenName+":       SAVE NO");
     	}
     }
     

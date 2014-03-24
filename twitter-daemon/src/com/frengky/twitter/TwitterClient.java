@@ -47,7 +47,6 @@ public class TwitterClient implements Runnable {
 	
 	public void run() {
 		log.info("Starting twitter client @" + screenName);
-		
 		if(screenName != null) {
 			ConfigurationBuilder cb = new ConfigurationBuilder();
 			cb.setDebugEnabled(true)
@@ -66,6 +65,6 @@ public class TwitterClient implements Runnable {
 	        twitterStream.user();			
 		} else {
 			log.error("@"+screenName+": EXCEPTION configuration incomplete, aborted.");
-		}	
+		}
 	}
 }
