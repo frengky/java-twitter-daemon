@@ -101,8 +101,6 @@ public class TwitterStreamListener implements UserStreamListener {
     	log.info("@"+myScreenName+": TWEET TEXT " + statusText);
     	log.info("@"+myScreenName+":       FROM @"+screenName+" [name:" + name + "] [id:" + userId + "] [rt:" + rtCount + "]");
     	
-    	tweetLog.info("@"+ myScreenName + ": @" + screenName + ": " + statusText);
-    	
     	status.getUserMentionEntities();
     	UserMentionEntity[] entities = status.getUserMentionEntities();
     	if(entities.length > 0) {
@@ -117,6 +115,7 @@ public class TwitterStreamListener implements UserStreamListener {
     	}
     	
     	if(isMentioned == true) {
+    		tweetLog.info("@"+ myScreenName + ": @" + screenName + ": " + statusText);
     		log.info("@"+myScreenName+":       SAVE YES");
     		insertToDb(userId, name, screenName, rtCount, statusText, status.getCreatedAt());
     	} else {
