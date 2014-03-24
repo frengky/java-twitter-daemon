@@ -1,7 +1,10 @@
+/bin/*.jar
 *~
 .classpath
+.class
 .project
 .settings
 .metadata
+/twitter-daemon/bin
 /src
 
