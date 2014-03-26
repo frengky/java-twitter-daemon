@@ -3,9 +3,13 @@ import java.io.FileInputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Locale;
 import java.util.Properties;
+
 import org.apache.log4j.Logger;
+
 import twitter4j.*;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -106,7 +110,7 @@ public class TwitterStreamListener implements UserStreamListener {
     	if(entities.length > 0) {
         	ArrayList<String> mentions = new ArrayList<String>();
         	for(UserMentionEntity entity : entities) {
-        		if(entity.getScreenName().toLowerCase() == myScreenName.toLowerCase()) {
+        		if(entity.getScreenName().toLowerCase(Locale.ENGLISH).equals(myScreenName.toLowerCase(Locale.ENGLISH))) {
         			isMentioned = true;
         		}
     			mentions.add("@" + entity.getScreenName());
