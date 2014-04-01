@@ -53,28 +53,32 @@ public class TwitterStreamListener implements UserStreamListener {
 		}
 	}
 	
-	public void insertToDb(long user_id, String user_name, String screen_name, int rt_count, String tweet, Date tweeted) {
+	public void insertToDb(long user_id, String user_name, String screen_name, int rt_count, String mention, String tweet, Date tweeted) {
 		PreparedStatement stmt = null;
 		
 		try {
 			StringBuilder sql = new StringBuilder();
 			sql.append("INSERT INTO ");
 			sql.append(dbTable);
-			sql.append("(user_id, user_name, screen_name, rt_count, tweet, tweeted, app_user, created)");
+			sql.append("(user_id, user_name, screen_name, rt_count, mention, tweet, tweeted, app_user, published, deleted, created, modified)");
 			sql.append(" VALUES(?,?,?,?,?,?,?,?)");
 			
 			SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 			Date created = new Date();
 			
 			stmt = conn.prepareStatement(sql.toString());
-			stmt.setInt(1, (int)user_id);
-			stmt.setString(2, user_name);
-			stmt.setString(3, screen_name);
-			stmt.setInt(4,  rt_count);
-			stmt.setString(5, tweet);
-			stmt.setString(6, dateFormat.format(tweeted));
-			stmt.setString(7, myScreenName);
-			stmt.setString(8, dateFormat.format(created));
+			stmt.setInt(1, (int)user_id); // user_id
+			stmt.setString(2, user_name); // user_name
+			stmt.setString(3, screen_name); // screen_name
+			stmt.setInt(4,  rt_count); // rt_count
+			stmt.setString(5, mention); // mention
+			stmt.setString(6, tweet); // tweet
+			stmt.setString(7, dateFormat.format(tweeted)); //tweeted
+			stmt.setString(8, myScreenName); // app_user
+			stmt.setString(9, "Yes"); // published
+			stmt.setInt(10, 0); // deleted
+			stmt.setString(11, dateFormat.format(created)); // created
+			stmt.setString(12, dateFormat.format(created)); // modified
 
 			int affected = stmt.executeUpdate();
 			
@@ -107,6 +111,7 @@ public class TwitterStreamListener implements UserStreamListener {
     	
     	status.getUserMentionEntities();
     	UserMentionEntity[] entities = status.getUserMentionEntities();
+    	String mentionList = "";
     	if(entities.length > 0) {
         	ArrayList<String> mentions = new ArrayList<String>();
         	for(UserMentionEntity entity : entities) {
@@ -115,13 +120,14 @@ public class TwitterStreamListener implements UserStreamListener {
         		}
     			mentions.add("@" + entity.getScreenName());
     		}
-        	log.info("@"+myScreenName+":       MENT " + TwitterUtil.join(mentions, ","));
+        	mentionList = TwitterUtil.join(mentions, " ");
+        	log.info("@"+myScreenName+":       MENT " + mentionList);
     	}
     	
     	if(isMentioned == true) {
     		tweetLog.info("@"+ myScreenName + ": @" + screenName + ": " + statusText);
     		log.info("@"+myScreenName+":       SAVE YES");
-    		insertToDb(userId, name, screenName, rtCount, statusText, status.getCreatedAt());
+    		insertToDb(userId, name, screenName, rtCount, mentionList, statusText, status.getCreatedAt());
     	} else {
     		log.info("@"+myScreenName+":       SAVE NO");
     	}
