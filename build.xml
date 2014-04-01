@@ -1,11 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<project basedir="." default="help" name="console-logger">
+<project basedir="." default="help" name="twitter">
     <property environment="env"/>
     <property name="target" value="1.6"/>
     <property name="source" value="1.6"/>
-    <property name="twitter-daemon.version" value="1.0"/>
+    <property name="app.title" value="Twitter Daemon"/>
+    <property name="app.version" value="1.0"/>
+    <property name="app.author" value="Frengky" />
+    <property name="src" value="twitter-daemon" />
+    <property name="dist" value="bin" />
+    <property name="dist-jar" value="twitter-daemon" />
+    <property name="main-class" value="com.frengky.twitter.Twitter" />
 
-    <path id="classpath">
+    <path id="build-classpath">
         <pathelement location="lib/log4j-1.2.17.jar"/>
         <pathelement location="lib/slf4j-api-1.6.6.jar"/>
         <pathelement location="lib/slf4j-log4j12-1.6.6.jar"/>
@@ -15,23 +21,40 @@
         <pathelement location="lib/mysql-connector-java-5.1.29-bin.jar"/>
     </path>
 
+    <path id="classpath">
+        <fileset dir="lib">
+            <include name="*.jar" />
+        </fileset>
+    </path>
+
+    <manifestclasspath property="manifest-classpath" jarfile="${dist}/${dist-jar}.jar">
+        <classpath refid="classpath"/>
+    </manifestclasspath>
+
     <target name="init" />
+
     <target name="clean">
-        <delete file="bin/twitter-daemon.jar"/>
-        <delete dir="twitter-daemon/bin"/>
+        <delete file="${dist}/${dist-jar}.jar"/>
+        <delete dir="${src}/bin"/>
     </target>
+
     <target name="compile" depends="clean">
-        <mkdir dir="twitter-daemon/bin" />
-        <javac debug="false" includeantruntime="false" srcdir="twitter-daemon/src" destdir="twitter-daemon/bin" source="${source}" target="${target}">
-            <classpath refid="classpath"/>
+        <mkdir dir="${src}/bin" />
+        <javac debug="false" includeantruntime="false" srcdir="${src}/src" destdir="${src}/bin" source="${source}" target="${target}">
+            <classpath refid="build-classpath"/>
         </javac>
     </target>
+
     <target name="build" depends="clean,compile">
-        <jar destfile="bin/twitter-daemon.jar" basedir="twitter-daemon/bin" />
+        <jar destfile="${dist}/${dist-jar}.jar" basedir="${src}/bin">
+            <manifest>
+                <attribute name="Main-Class" value="${main-class}"/>
+                <attribute name="Class-Path" value="${manifest-classpath}"/>
+            </manifest>
+        </jar>
     </target>
 
     <target name="help">
-        <echo message="Twitter Daemon Project"/>
         <echo message="Java ${ant.java.version} ${os.arch}"/>
     </target>
 </project>

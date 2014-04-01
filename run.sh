@@ -4,27 +4,26 @@
 ## Configure application directories
 ##
 APP_HOME=$(pwd)
+APP_JAR=$APP_HOME/bin/twitter-daemon.jar
 APP_CONFIG=$APP_HOME/config
 APP_CONFIG_DIR=$APP_HOME/config.d
+APP_CONFIG_LOG4J=$APP_CONFIG/log4j.properties
+
 ##
 ## Configure Java environment
 ##
-JAVA_HOME=/home/frengky/App/java-6-oracle-x86
-JAVA=$JAVA_HOME/bin/java
-CLASSPATH=$APP_HOME/lib/'*':$APP_HOME/bin/twitter-daemon.jar
-export JAVA_HOME=$JAVA_HOME
+export JAVA_HOME=/home/frengky/App/java-6-oracle-x86
 
 ##
 ## Run the application
 ##
 cd $APP_HOME
 
-$JAVA \
+$JAVA_HOME/bin/java \
     -Xms32m -Xmx128m \
-    -Dconfigdir=$APP_CONFIG_DIR \
-    -Dlog4j.configuration=file://$APP_CONFIG/log4j.properties \
-    -Ddbconfig=$APP_CONFIG/mysql.properties \
+    -Dlog4j.configuration=file://$APP_CONFIG_LOG4J \
     -Djava.net.preferIPv4Stack=true \
     -Dfile.encoding=US-ASCII \
-    -classpath $CLASSPATH \
-    com.frengky.twitter.Twitter
+    -Ddbconfig=$APP_CONFIG/mysql.properties \
+    -Dconfigdir=$APP_CONFIG_DIR \
+    -jar $APP_JAR
