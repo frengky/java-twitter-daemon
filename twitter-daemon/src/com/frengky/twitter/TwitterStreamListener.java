@@ -95,14 +95,14 @@ public class TwitterStreamListener implements UserStreamListener {
 		return found;
 	}
 	
-	public void insertToDb(long user_id, String user_name, String screen_name, String radio_name, String mention, String tweet, Date tweeted) {
+	public void insertToDb(long user_id, String user_name, String screen_name, String profile_image, String radio_name, String mention, String tweet, Date tweeted) {
 		PreparedStatement stmt = null;
 		try {
 			StringBuilder sql = new StringBuilder();
 			sql.append("INSERT INTO ");
 			sql.append(dbTable);
-			sql.append("(user_id, user_name, screen_name, mention, tweet, timeline, radio_name, published, deleted, tweeted, created, modified)");
-			sql.append(" VALUES(?,?,?,?,?,?,?,?,?,?,?,?)");
+			sql.append("(user_id, user_name, screen_name, mention, tweet, timeline, radio_name, profile_image, published, deleted, tweeted, created, modified)");
+			sql.append(" VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)");
 			
 			SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 			Date created = new Date();
@@ -115,11 +115,12 @@ public class TwitterStreamListener implements UserStreamListener {
 			stmt.setString(5, tweet); // tweet
 			stmt.setString(6, myScreenName); // timeline
 			stmt.setString(7, radio_name); // published
-			stmt.setString(8, "Yes"); // published
-			stmt.setInt(9, 0); // deleted
-			stmt.setString(10, dateFormat.format(tweeted)); //tweeted
-			stmt.setString(11, dateFormat.format(created)); // created
-			stmt.setString(12, dateFormat.format(created)); // modified
+			stmt.setString(8, profile_image); // profile_image
+			stmt.setString(9, "Yes"); // published
+			stmt.setInt(10, 0); // deleted
+			stmt.setString(11, dateFormat.format(tweeted)); //tweeted
+			stmt.setString(12, dateFormat.format(created)); // created
+			stmt.setString(13, dateFormat.format(created)); // modified
 
 			int affected = stmt.executeUpdate();
 			
@@ -149,6 +150,7 @@ public class TwitterStreamListener implements UserStreamListener {
     	boolean isRadioMentioned = false;
     	String radioName = "";
     	String mentionList = "";
+    	String profileImage = user.getOriginalProfileImageURL();
     	
     	log.info("@"+myScreenName+": TWEET TEXT " + statusText);
     	log.info("@"+myScreenName+":       FROM @"+screenName+" [name:" + name + "] [id:" + userId + "] [rt:" + rtCount + "]");
@@ -188,7 +190,7 @@ public class TwitterStreamListener implements UserStreamListener {
     		logStr.append(",  SAVE YES");
     		log.info(logStr.toString());
     		tweetLog.info("@"+ myScreenName + ": @" + screenName + ": " + statusText);
-    		insertToDb(userId, name, screenName, radioName, mentionList, statusText, status.getCreatedAt());
+    		insertToDb(userId, name, screenName, profileImage, radioName, mentionList, statusText, status.getCreatedAt());
     	} else {
     		logStr.append(",  SAVE NO");
     		log.info(logStr.toString());

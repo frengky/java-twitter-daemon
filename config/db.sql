@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS `feeds` (
   `tweet` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
   `timeline` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
   `radio_name` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `profile_image` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
   `published` varchar(3) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
   `deleted` tinyint(1) NOT NULL,
   `tweeted` datetime NOT NULL,
