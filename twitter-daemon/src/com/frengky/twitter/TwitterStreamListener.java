@@ -53,32 +53,30 @@ public class TwitterStreamListener implements UserStreamListener {
 		}
 	}
 	
-	public void insertToDb(long user_id, String user_name, String screen_name, int rt_count, String mention, String tweet, Date tweeted) {
+	public void insertToDb(long user_id, String user_name, String screen_name, String mention, String tweet, Date tweeted) {
 		PreparedStatement stmt = null;
-		
 		try {
 			StringBuilder sql = new StringBuilder();
 			sql.append("INSERT INTO ");
 			sql.append(dbTable);
-			sql.append("(user_id, user_name, screen_name, rt_count, mention, tweet, tweeted, app_user, published, deleted, created, modified)");
-			sql.append(" VALUES(?,?,?,?,?,?,?,?)");
+			sql.append("(user_id, user_name, screen_name, mention, tweet, timeline, published, deleted, tweeted, created, modified)");
+			sql.append(" VALUES(?,?,?,?,?,?,?,?,?,?,?)");
 			
 			SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 			Date created = new Date();
 			
 			stmt = conn.prepareStatement(sql.toString());
-			stmt.setInt(1, (int)user_id); // user_id
+			stmt.setLong(1, user_id); // user_id
 			stmt.setString(2, user_name); // user_name
 			stmt.setString(3, screen_name); // screen_name
-			stmt.setInt(4,  rt_count); // rt_count
-			stmt.setString(5, mention); // mention
-			stmt.setString(6, tweet); // tweet
-			stmt.setString(7, dateFormat.format(tweeted)); //tweeted
-			stmt.setString(8, myScreenName); // app_user
-			stmt.setString(9, "Yes"); // published
-			stmt.setInt(10, 0); // deleted
-			stmt.setString(11, dateFormat.format(created)); // created
-			stmt.setString(12, dateFormat.format(created)); // modified
+			stmt.setString(4, mention); // mention
+			stmt.setString(5, tweet); // tweet
+			stmt.setString(6, myScreenName); // timeline
+			stmt.setString(7, "Yes"); // published
+			stmt.setInt(8, 0); // deleted
+			stmt.setString(9, dateFormat.format(tweeted)); //tweeted
+			stmt.setString(10, dateFormat.format(created)); // created
+			stmt.setString(11, dateFormat.format(created)); // modified
 
 			int affected = stmt.executeUpdate();
 			
@@ -127,7 +125,7 @@ public class TwitterStreamListener implements UserStreamListener {
     	if(isMentioned == true) {
     		tweetLog.info("@"+ myScreenName + ": @" + screenName + ": " + statusText);
     		log.info("@"+myScreenName+":       SAVE YES");
-    		insertToDb(userId, name, screenName, rtCount, mentionList, statusText, status.getCreatedAt());
+    		insertToDb(userId, name, screenName, mentionList, statusText, status.getCreatedAt());
     	} else {
     		log.info("@"+myScreenName+":       SAVE NO");
     	}
