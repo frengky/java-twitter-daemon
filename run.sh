@@ -23,7 +23,7 @@ $JAVA_HOME/bin/java \
     -Xms32m -Xmx128m \
     -Dlog4j.configuration=file://$APP_CONFIG_LOG4J \
     -Djava.net.preferIPv4Stack=true \
-    -Dfile.encoding=US-ASCII \
+    -Dfile.encoding=UTF-8 \
     -Ddbconfig=$APP_CONFIG/mysql.properties \
     -Dconfigdir=$APP_CONFIG_DIR \
     -jar $APP_JAR

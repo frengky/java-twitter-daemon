@@ -1,4 +1,5 @@
 package com.frengky.twitter;
+
 import java.io.FileInputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -21,6 +22,33 @@ public class TwitterStreamListener implements UserStreamListener {
 	private Connection conn;
 	private String dbTable;
 	private String myScreenName;
+	private String[] radio = new String[] {
+		"101Jakfm",
+		"987Genfm",
+		"Prambors",
+		"ardanradio",
+		"GajahmadaFM",
+		"GeronimoFM",
+		"solo_radio",
+		"istarafm",
+		"ElfaraFM",
+		"KissFmMedan",
+		"MomeafmPLM",
+		"FlamboyantFM",
+		"radio_nuansa",
+		"Persada924FM",
+		"JRadio917FM",
+		"radiovenusmks",
+		"CDBSFMBALI",
+		"ClassyFM",
+		"kita876fm",
+		"trendyfm",
+		"onix887fm"
+	};
+	
+	public TwitterStreamListener() {
+		log.info("Filters: " + radio.length + " screen name(s)");
+	}
 	
 	public void setScreenName(String screenName) {
 		myScreenName = screenName;
@@ -38,14 +66,11 @@ public class TwitterStreamListener implements UserStreamListener {
 			connString.append(prop.getProperty("mysql.host"));
 			connString.append("/");
 			connString.append(prop.getProperty("mysql.database"));
-			connString.append("?");
-			connString.append("user=" + prop.getProperty("mysql.user"));
-			connString.append("&");
-			connString.append("password=" + prop.getProperty("mysql.password"));
+			connString.append("?useUnicode=true&characterEncoding=UTF-8");
 			dbTable = prop.getProperty("mysql.table");
 			
 			Class.forName("com.mysql.jdbc.Driver").newInstance();
-			conn = DriverManager.getConnection(connString.toString());
+			conn = DriverManager.getConnection(connString.toString(), prop.getProperty("mysql.user"), prop.getProperty("mysql.password"));
 			
 			log.info("@" + myScreenName + ": MYSQL " + connString.toString());
 		} catch(Exception e) {
@@ -53,14 +78,31 @@ public class TwitterStreamListener implements UserStreamListener {
 		}
 	}
 	
-	public void insertToDb(long user_id, String user_name, String screen_name, String mention, String tweet, Date tweeted) {
+	private boolean isMyScreenName(String screenName) {
+		if(myScreenName.toLowerCase(Locale.ENGLISH).equals(screenName.toLowerCase(Locale.ENGLISH))) {
+			return true;
+		}
+		return false;
+	}
+	
+	private boolean isRadioScreenName(String screenName) {
+		boolean found = false;
+		for(String radioScreenName : radio) {
+			if(radioScreenName.toLowerCase(Locale.ENGLISH).equals(screenName.toLowerCase(Locale.ENGLISH))) {
+				found = true;
+			}
+		}
+		return found;
+	}
+	
+	public void insertToDb(long user_id, String user_name, String screen_name, String radio_name, String mention, String tweet, Date tweeted) {
 		PreparedStatement stmt = null;
 		try {
 			StringBuilder sql = new StringBuilder();
 			sql.append("INSERT INTO ");
 			sql.append(dbTable);
-			sql.append("(user_id, user_name, screen_name, mention, tweet, timeline, published, deleted, tweeted, created, modified)");
-			sql.append(" VALUES(?,?,?,?,?,?,?,?,?,?,?)");
+			sql.append("(user_id, user_name, screen_name, mention, tweet, timeline, radio_name, published, deleted, tweeted, created, modified)");
+			sql.append(" VALUES(?,?,?,?,?,?,?,?,?,?,?,?)");
 			
 			SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 			Date created = new Date();
@@ -72,11 +114,12 @@ public class TwitterStreamListener implements UserStreamListener {
 			stmt.setString(4, mention); // mention
 			stmt.setString(5, tweet); // tweet
 			stmt.setString(6, myScreenName); // timeline
-			stmt.setString(7, "Yes"); // published
-			stmt.setInt(8, 0); // deleted
-			stmt.setString(9, dateFormat.format(tweeted)); //tweeted
-			stmt.setString(10, dateFormat.format(created)); // created
-			stmt.setString(11, dateFormat.format(created)); // modified
+			stmt.setString(7, radio_name); // published
+			stmt.setString(8, "Yes"); // published
+			stmt.setInt(9, 0); // deleted
+			stmt.setString(10, dateFormat.format(tweeted)); //tweeted
+			stmt.setString(11, dateFormat.format(created)); // created
+			stmt.setString(12, dateFormat.format(created)); // modified
 
 			int affected = stmt.executeUpdate();
 			
@@ -103,18 +146,24 @@ public class TwitterStreamListener implements UserStreamListener {
     	String statusText = status.getText();
     	int rtCount = status.getRetweetCount();
     	boolean isMentioned = false;
+    	boolean isRadioMentioned = false;
+    	String radioName = "";
+    	String mentionList = "";
     	
     	log.info("@"+myScreenName+": TWEET TEXT " + statusText);
     	log.info("@"+myScreenName+":       FROM @"+screenName+" [name:" + name + "] [id:" + userId + "] [rt:" + rtCount + "]");
     	
     	status.getUserMentionEntities();
     	UserMentionEntity[] entities = status.getUserMentionEntities();
-    	String mentionList = "";
     	if(entities.length > 0) {
         	ArrayList<String> mentions = new ArrayList<String>();
         	for(UserMentionEntity entity : entities) {
-        		if(entity.getScreenName().toLowerCase(Locale.ENGLISH).equals(myScreenName.toLowerCase(Locale.ENGLISH))) {
+        		if(isMyScreenName(entity.getScreenName())) {
         			isMentioned = true;
+        		}
+        		if(isRadioScreenName(entity.getScreenName())) {
+        			radioName = entity.getScreenName();
+        			isRadioMentioned = true;
         		}
     			mentions.add("@" + entity.getScreenName());
     		}
@@ -122,12 +171,27 @@ public class TwitterStreamListener implements UserStreamListener {
         	log.info("@"+myScreenName+":       MENT " + mentionList);
     	}
     	
-    	if(isMentioned == true) {
-    		tweetLog.info("@"+ myScreenName + ": @" + screenName + ": " + statusText);
-    		log.info("@"+myScreenName+":       SAVE YES");
-    		insertToDb(userId, name, screenName, mentionList, statusText, status.getCreatedAt());
+    	StringBuilder logStr = new StringBuilder();
+    	logStr.append("@"+myScreenName+":       ");
+    	if(isMentioned) {
+    		logStr.append("ME YES");
     	} else {
-    		log.info("@"+myScreenName+":       SAVE NO");
+    		logStr.append("ME NO ");
+    	}
+    	if(isRadioMentioned) {
+    		logStr.append(",  RADIO YES");
+    	} else {
+    		logStr.append(",  RADIO NO ");
+    	}
+    	
+    	if(isMentioned == true && isRadioMentioned == true) {
+    		logStr.append(",  SAVE YES");
+    		log.info(logStr.toString());
+    		tweetLog.info("@"+ myScreenName + ": @" + screenName + ": " + statusText);
+    		insertToDb(userId, name, screenName, radioName, mentionList, statusText, status.getCreatedAt());
+    	} else {
+    		logStr.append(",  SAVE NO");
+    		log.info(logStr.toString());
     	}
     }
     
