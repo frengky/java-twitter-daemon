@@ -14,12 +14,12 @@ import twitter4j.*;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 public class TwitterStreamListener implements UserStreamListener {
 	private static Logger log = Logger.getLogger(TwitterStreamListener.class);
 	private static Logger tweetLog = Logger.getLogger(Tweet.class);
-	
-	private Connection conn;
+	private Connection conn = null;
 	private String dbTable;
 	private String myScreenName;
 	private String[] radio = new String[] {
@@ -59,7 +59,7 @@ public class TwitterStreamListener implements UserStreamListener {
 		connString.append("jdbc:mysql://");
 		
 		String myDbConfig = System.getProperty("dbconfig");
-		log.info("@" + myScreenName + ": MYSQL " + myDbConfig);
+		log.info("@" + myScreenName + ": MYSQL CONNECT " + myDbConfig);
 		try {
 			Properties prop = new Properties();
 			prop.load(new FileInputStream(myDbConfig));
@@ -72,9 +72,11 @@ public class TwitterStreamListener implements UserStreamListener {
 			Class.forName("com.mysql.jdbc.Driver").newInstance();
 			conn = DriverManager.getConnection(connString.toString(), prop.getProperty("mysql.user"), prop.getProperty("mysql.password"));
 			
-			log.info("@" + myScreenName + ": MYSQL " + connString.toString());
+			log.info("@" + myScreenName + ": MYSQL CONNECT " + connString.toString());
+		} catch(SQLException e) {
+			log.error("@" + myScreenName + ": MYSQL CONNECT EXCEPTION: " + e.toString());
 		} catch(Exception e) {
-			log.error("@" + myScreenName + ": MYSQL EXCEPTION Error building database connection: " + e.toString());
+			log.error("@" + myScreenName + ": EXCEPTION: " + e.toString());
 		}
 	}
 	
@@ -96,6 +98,16 @@ public class TwitterStreamListener implements UserStreamListener {
 	}
 	
 	public void insertToDb(long user_id, String user_name, String screen_name, String profile_image, String radio_name, String mention, String tweet, Date tweeted) {
+		try {
+			boolean valid = conn.isValid(3);
+			if(valid == false) {
+				log.warn("@" + myScreenName + ": MYSQL CHECK: Connection broken, reconnecting...");
+				connectDatabase();
+			}
+		} catch(SQLException e) {
+			log.error("@" + myScreenName + ": MYSQL CHECK EXCEPTION: " + e.getMessage());
+		}
+
 		PreparedStatement stmt = null;
 		try {
 			StringBuilder sql = new StringBuilder();
@@ -128,8 +140,10 @@ public class TwitterStreamListener implements UserStreamListener {
 			if(!stmt.isClosed()) {
 				stmt.close();
 			}
+		} catch(SQLException e) {
+			log.error("@" + myScreenName + ": MYSQL INSERT EXCEPTION: " + e.getMessage());
 		} catch(Exception e) {
-			log.error("@" + myScreenName + ": MYSQL EXCEPTION: " + e.getMessage());
+			log.error("@" + myScreenName + ": EXCEPTION: " + e.getMessage());
 		} finally {
 			if(stmt != null) {
 				stmt = null;
