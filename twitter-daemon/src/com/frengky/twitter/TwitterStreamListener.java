@@ -98,14 +98,15 @@ public class TwitterStreamListener implements UserStreamListener {
 	}
 	
 	public void insertToDb(long user_id, String user_name, String screen_name, String profile_image, String radio_name, String mention, String tweet, Date tweeted) {
+		boolean valid = false;
 		try {
-			boolean valid = conn.isValid(3);
-			if(valid == false) {
-				log.warn("@" + myScreenName + ": MYSQL CHECK: Connection broken, reconnecting...");
-				connectDatabase();
-			}
+			valid = conn.isValid(3);
 		} catch(SQLException e) {
-			log.error("@" + myScreenName + ": MYSQL CHECK EXCEPTION: " + e.getMessage());
+			log.error("@" + myScreenName + ": MYSQL CHECK: EXCEPTION: " + e.getMessage());
+		}
+		if(valid == false) {
+			log.warn("@" + myScreenName + ": MYSQL CHECK: Connection broken, reconnecting...");
+			connectDatabase();
 		}
 
 		PreparedStatement stmt = null;
