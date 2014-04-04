@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <project basedir="." default="help" name="twitter">
     <property environment="env"/>
-    <property name="target" value="1.6"/>
-    <property name="source" value="1.6"/>
+    <property name="target" value="1.7"/>
+    <property name="source" value="1.7"/>
     <property name="app.title" value="Twitter Daemon"/>
     <property name="app.version" value="1.0"/>
     <property name="app.author" value="Frengky" />
@@ -18,7 +18,8 @@
         <pathelement location="lib/jansi-1.11.jar"/>
         <pathelement location="lib/twitter4j-core-4.0.1.jar"/>
         <pathelement location="lib/twitter4j-stream-4.0.1.jar"/>
-        <pathelement location="lib/mysql-connector-java-5.1.29-bin.jar"/>
+        <pathelement location="lib/mysql-connector-java-5.1.30-bin.jar"/>
+        <pathelement location="lib/HikariCP-1.3.5.jar"/>
     </path>
 
     <path id="classpath">

@@ -12,7 +12,7 @@ APP_CONFIG_LOG4J=$APP_CONFIG/log4j.properties
 ##
 ## Configure Java environment
 ##
-export JAVA_HOME=/home/frengky/App/java-6-oracle-x86
+export JAVA_HOME=/home/frengky/App/java-7-oracle-x86_64
 
 ##
 ## Run the application
