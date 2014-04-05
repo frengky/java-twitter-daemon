@@ -256,8 +256,7 @@ public class TwitterClient {
 	    		logStr.append(",  RADIO NO ");
 	    	}
 	    	
-	    	// if(isMentioned == true && isRadioMentioned == true) {
-	    	if(true) {
+	    	if(isMentioned == true && isRadioMentioned == true) {
 	    		logStr.append(",  SAVE YES");
 	    		log.info(logStr.toString());
 	    		tweetLog.info("@"+ screenName + ": @" + user.getScreenName() + ": " + status.getText());
