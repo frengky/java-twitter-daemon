@@ -1,9 +1,9 @@
 package com.frengky.twitter;
+
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
@@ -11,6 +11,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Properties;
+
+import javax.sql.DataSource;
 
 import org.apache.log4j.Logger;
 
@@ -26,65 +28,89 @@ import twitter4j.UserMentionEntity;
 import twitter4j.UserStreamListener;
 import twitter4j.conf.ConfigurationBuilder;
 
-public class TwitterClient implements Runnable {
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+
+public class TwitterClient {
 	private static Logger log = Logger.getLogger(TwitterClient.class);
 	private static Logger tweetLog = Logger.getLogger(Tweet.class);
-	private String configPath = null;
-	private String screenName = null;
+	private DataSource dataSource = null;
 	
-	public TwitterClient(String config) {
-		configPath = config;
+	public TwitterClient() {
+		log.info("Twitter Daemon v1.1 (frengky.lim@gmail.com)");
+		
+		String configFile = System.getProperty("dbconfig");
+		HikariConfig config = new HikariConfig(configFile);
+		
+		config.setMaximumPoolSize(20);		
+		config.setConnectionTestQuery("SELECT 1");
+		
+		dataSource = new HikariDataSource(config);		
 	}
 	
-	public void run() {
-		String consumerKey = null;
-		String consumerSecret = null;
-		String accessToken = null;
-		String accessTokenSecret = null;
-		
-		try {
-			Properties prop = new Properties();
-			prop.load(new FileInputStream(configPath));
-			
-			screenName = prop.getProperty("twitter.screenName").trim();
-			consumerKey = prop.getProperty("twitter.oauth.consumerKey").trim();
-			consumerSecret = prop.getProperty("twitter.oauth.consumerSecret").trim();
-			accessToken = prop.getProperty("twitter.oauth.accessToken").trim();
-			accessTokenSecret = prop.getProperty("twitter.oauth.accessTokenSecret").trim();
-		} catch(FileNotFoundException e) {
-			log.error("Configuration file not found: " + e.getMessage());
-		} catch(IOException e) {
-			log.error(e.getMessage());
-		} catch(Exception e) {
-			log.error(e.getMessage());
-		}
-		
-		if(accessToken == null || accessToken.equals("")) {
-			log.error("Configuration file incomplete, cannot continue");
-			return;
-		}
-		
-		log.info("Starting twitter client @" + screenName);
-		
-		ConfigurationBuilder cb = new ConfigurationBuilder();
-		cb.setDebugEnabled(true)
-			.setOAuthConsumerKey(consumerKey)
-			.setOAuthConsumerSecret(consumerSecret)
-			.setOAuthAccessToken(accessToken)
-			.setOAuthAccessTokenSecret(accessTokenSecret);
-		
-		TwitterStreamListener listener = new TwitterStreamListener();
-		listener.connectDatabase();
-		
-		log.info("@"+screenName+": Attaching stream listener ...");
-		TwitterStream twitterStream = new TwitterStreamFactory(cb.build()).getInstance();
-        twitterStream.addListener(listener);
-        twitterStream.user();
+	public void dispose() {
+		((HikariDataSource)dataSource).shutdown();
+	}
+	
+	public void dispatch(final String configFile) {
+		(new Thread(new Runnable() {
+			public void run() {
+
+				String screenName = null;
+				String consumerKey = null;
+				String consumerSecret = null;
+				String accessToken = null;
+				String accessTokenSecret = null;
+				
+				try {
+					Properties prop = new Properties();
+					prop.load(new FileInputStream(configFile));
+					
+					screenName = prop.getProperty("twitter.screenName").trim();
+					consumerKey = prop.getProperty("twitter.oauth.consumerKey").trim();
+					consumerSecret = prop.getProperty("twitter.oauth.consumerSecret").trim();
+					accessToken = prop.getProperty("twitter.oauth.accessToken").trim();
+					accessTokenSecret = prop.getProperty("twitter.oauth.accessTokenSecret").trim();
+				} catch(FileNotFoundException e) {
+					log.error("Configuration file not found: " + e.getMessage());
+				} catch(IOException e) {
+					log.error(e.getMessage());
+				} catch(Exception e) {
+					log.error(e.getMessage());
+				}
+				
+				if(accessToken == null || accessToken.equals("")) {
+					log.error("Configuration file incomplete, cannot continue");
+					return;
+				}
+				
+				log.info("Starting twitter client @" + screenName);
+				
+				ConfigurationBuilder cb = new ConfigurationBuilder();
+				cb.setDebugEnabled(true)
+					.setOAuthConsumerKey(consumerKey)
+					.setOAuthConsumerSecret(consumerSecret)
+					.setOAuthAccessToken(accessToken)
+					.setOAuthAccessTokenSecret(accessTokenSecret);
+				
+				final TwitterStream twitterStream = new TwitterStreamFactory(cb.build()).getInstance();
+				twitterStream.addListener(new TwitterStreamListener(screenName));
+				
+				Runtime.getRuntime().addShutdownHook(new Thread() {
+					public void run() {
+						twitterStream.clearListeners();
+						twitterStream.shutdown();
+					}
+				});
+				
+		        twitterStream.user();
+		        
+			}
+		})).start();
 	}
 	
 	private class TwitterStreamListener implements UserStreamListener {
-		private Connection conn = null;
-		private String dbTable;
+		private String screenName;
 		private String[] radio = new String[] {
 			"101Jakfm",
 			"987Genfm",
@@ -109,35 +135,9 @@ public class TwitterClient implements Runnable {
 			"onix887fm"
 		};
 		
-		public TwitterStreamListener() {
-			log.info("Filters: " + radio.length + " screen name(s)");
-		}
-		
-		public void connectDatabase() {
-			StringBuilder connString = new StringBuilder();
-			connString.append("jdbc:mysql://");
-			
-			String myDbConfig = System.getProperty("dbconfig");
-			log.info("@" + screenName + ": MYSQL CONNECT " + myDbConfig);
-			try {
-				Properties prop = new Properties();
-				prop.load(new FileInputStream(myDbConfig));
-				connString.append(prop.getProperty("mysql.host"));
-				connString.append("/");
-				connString.append(prop.getProperty("mysql.database"));
-				connString.append("?useUnicode=true&characterEncoding=UTF-8");
-				dbTable = prop.getProperty("mysql.table");
-				
-				Class.forName("com.mysql.jdbc.Driver").newInstance();
-				conn = DriverManager.getConnection(connString.toString(), prop.getProperty("mysql.user"), prop.getProperty("mysql.password"));
-				
-				log.info("@" + screenName + ": MYSQL CONNECT " + connString.toString());
-			} catch(SQLException e) {
-				log.error("@" + screenName + ": MYSQL CONNECT EXCEPTION: " + e.toString());
-			} catch(Exception e) {
-				log.error("@" + screenName + ": EXCEPTION: " + e.toString());
-			}
-		}
+		public TwitterStreamListener(String screenName) {
+			this.screenName = screenName;
+		}	
 		
 		private boolean isMyScreenName(String sName) {
 			if(screenName.toLowerCase(Locale.ENGLISH).equals(sName.toLowerCase(Locale.ENGLISH))) {
@@ -156,23 +156,15 @@ public class TwitterClient implements Runnable {
 			return found;
 		}
 		
-		public void insertToDb(long user_id, String user_name, String screen_name, String profile_image, String radio_name, String mention, String tweet, Date tweeted) {
-			boolean valid = false;
-			try {
-				valid = conn.isValid(3);
-			} catch(SQLException e) {
-				log.error("@" + screenName + ": MYSQL CHECK: EXCEPTION: " + e.getMessage());
-			}
-			if(valid == false) {
-				log.warn("@" + screenName + ": MYSQL CHECK: Connection broken, reconnecting...");
-				connectDatabase();
-			}
-
+		private void insertToDb(long user_id, String user_name, String screen_name, String profile_image, String radio_name, String mention, String tweet, Date tweeted) {
+			Connection conn = null;
 			PreparedStatement stmt = null;
+			
 			try {
+				conn = dataSource.getConnection();
+				
 				StringBuilder sql = new StringBuilder();
-				sql.append("INSERT INTO ");
-				sql.append(dbTable);
+				sql.append("INSERT INTO feeds");
 				sql.append("(user_id, user_name, screen_name, mention, tweet, timeline, radio_name, profile_image, published, deleted, tweeted, created, modified)");
 				sql.append(" VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)");
 				
@@ -197,17 +189,13 @@ public class TwitterClient implements Runnable {
 				int affected = stmt.executeUpdate();
 				
 				log.info("@" + screenName + ": MYSQL INSERT: " + affected + " affected row(s)");
-				if(!stmt.isClosed()) {
-					stmt.close();
-				}
 			} catch(SQLException e) {
 				log.error("@" + screenName + ": MYSQL INSERT EXCEPTION: " + e.getMessage());
 			} catch(Exception e) {
 				log.error("@" + screenName + ": EXCEPTION: " + e.getMessage());
 			} finally {
-				if(stmt != null) {
-					stmt = null;
-				}
+				try { if(stmt != null) { stmt.close(); } } catch(SQLException e) {}
+				try { if(conn != null) { conn.close(); } } catch(SQLException e) {}
 			}
 		}
 		
@@ -253,7 +241,8 @@ public class TwitterClient implements Runnable {
 	    		logStr.append(",  RADIO NO ");
 	    	}
 	    	
-	    	if(isMentioned == true && isRadioMentioned == true) {
+	    	// if(isMentioned == true && isRadioMentioned == true) {
+	    	if(true) {
 	    		logStr.append(",  SAVE YES");
 	    		log.info(logStr.toString());
 	    		tweetLog.info("@"+ screenName + ": @" + user.getScreenName() + ": " + status.getText());
