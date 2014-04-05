@@ -1,11 +1,7 @@
 package com.frengky.twitter;
 import java.io.File;
 
-import org.apache.log4j.Logger;
-
 public class Twitter {
-	private static Logger log = Logger.getLogger(Twitter.class);
-	
 	public static void main(String[] args) {
 		final TwitterClient twitter = new TwitterClient();
 		
@@ -16,7 +12,6 @@ public class Twitter {
 		});
 		
 		String configDir = System.getProperty("configdir");
-		log.info("Reading configuration files from directory " + configDir);
 		
 		File dir = new File(configDir);
 		File[] files = dir.listFiles();

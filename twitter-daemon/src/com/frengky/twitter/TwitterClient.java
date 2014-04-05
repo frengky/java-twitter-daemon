@@ -7,8 +7,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
+import java.util.AbstractCollection;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.Locale;
 import java.util.Properties;
 
@@ -109,6 +111,19 @@ public class TwitterClient {
 		})).start();
 	}
 	
+	public String join(AbstractCollection<String> s, String delimiter) {
+	    if (s == null || s.isEmpty()) return "";
+	    Iterator<String> iter = s.iterator();
+	    StringBuilder builder = new StringBuilder(iter.next());
+	    while( iter.hasNext() ) {
+	      builder.append(delimiter).append(iter.next());
+	    }
+	    return builder.toString();
+	 }	    
+	
+	private class Tweet {
+	}
+	
 	private class TwitterStreamListener implements UserStreamListener {
 		private String screenName;
 		private String[] radio = new String[] {
@@ -190,7 +205,7 @@ public class TwitterClient {
 				
 				log.info("@" + screenName + ": MYSQL INSERT: " + affected + " affected row(s)");
 			} catch(SQLException e) {
-				log.error("@" + screenName + ": MYSQL INSERT EXCEPTION: " + e.getMessage());
+				log.error("@" + screenName + ": SQLEXCEPTION: " + e.getMessage());
 			} catch(Exception e) {
 				log.error("@" + screenName + ": EXCEPTION: " + e.getMessage());
 			} finally {
@@ -224,7 +239,7 @@ public class TwitterClient {
 	        		}
 	    			mentions.add("@" + entity.getScreenName());
 	    		}
-	        	mentionList = TwitterUtil.join(mentions, " ");
+	        	mentionList = join(mentions, " ");
 	        	log.info("@"+screenName+":       MENT " + mentionList);
 	    	}
 	    	
@@ -343,6 +358,6 @@ public class TwitterClient {
 	    public void onException(Exception ex) {
 	        // ex.printStackTrace();
 	        log.warn("@"+screenName+": EXCEPTION "  + ex.getMessage());
-	    }
+	    }	    
 	}
 }
