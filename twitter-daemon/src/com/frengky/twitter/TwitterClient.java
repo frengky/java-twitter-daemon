@@ -16,8 +16,6 @@ import java.util.Properties;
 
 import javax.sql.DataSource;
 
-import org.apache.log4j.Logger;
-
 import twitter4j.DirectMessage;
 import twitter4j.StallWarning;
 import twitter4j.Status;
@@ -33,9 +31,12 @@ import twitter4j.conf.ConfigurationBuilder;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class TwitterClient {
-	private static Logger log = Logger.getLogger(TwitterClient.class);
-	private static Logger tweetLog = Logger.getLogger(Tweet.class);
+	private static Logger log = LoggerFactory.getLogger(TwitterClient.class);
+	private static Logger tweetLog = LoggerFactory.getLogger(Tweet.class);
 	private DataSource dataSource = null;
 	
 	public TwitterClient() {
