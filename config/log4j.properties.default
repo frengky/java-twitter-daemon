@@ -1,4 +1,4 @@
-log4j.rootLogger=ALL, debugdaily, stdout
+log4j.rootLogger=ALL, debugdaily
 
 log4j.logger.com.frengky.twitter.Tweet=ALL, tweetdaily
 log4j.additivity.com.frengky.twitter.Tweet=false
@@ -6,14 +6,17 @@ log4j.additivity.com.frengky.twitter.Tweet=false
 log4j.logger.com.frengky.twitter.TwitterClient=ALL, appdaily, stdout
 log4j.additivity.com.frengky.twitter.TwitterClient=false
 
+log4j.logger.twitter4j.TwitterStreamImpl=INFO, stdout
+log4j.logger.com.zaxxer.hikari.HikariPool=ALL, stdout
+log4j.logger.com.zaxxer.hikari.HikariConfig=ALL, stdout
+
 #
 # Appenders
 #
 
 log4j.appender.stdout=org.apache.log4j.ConsoleAppender
 log4j.appender.stdout.layout=org.apache.log4j.PatternLayout
-# log4j.appender.stdout.layout.ConversionPattern=%d{ISO8601} %-5p [%c{1}] %m%n
-log4j.appender.stdout.layout.ConversionPattern=%d{ISO8601} %-5p %m%n
+log4j.appender.stdout.layout.ConversionPattern=%d{ISO8601} %-5p [%c{1}] %m%n
 
 log4j.appender.debugdaily=org.apache.log4j.DailyRollingFileAppender
 log4j.appender.debugdaily.File=log/debug.log
@@ -21,7 +24,7 @@ log4j.appender.debugdaily.DatePattern='.'yyyy-MM-dd
 log4j.appender.rolling.MaxFileSize=100MB
 log4j.appender.rolling.MaxBackupIndex=1
 log4j.appender.debugdaily.layout=org.apache.log4j.PatternLayout
-log4j.appender.debugdaily.layout.ConversionPattern=%d{ISO8601} %-5p [%c{1}] %m%n
+log4j.appender.debugdaily.layout.ConversionPattern=%d{ISO8601} %-5p [%c] %m%n
 
 log4j.appender.appdaily=org.apache.log4j.DailyRollingFileAppender
 log4j.appender.appdaily.File=log/application.log
@@ -29,7 +32,7 @@ log4j.appender.appdaily.DatePattern='.'yyyy-MM-dd
 log4j.appender.rolling.MaxFileSize=100MB
 log4j.appender.rolling.MaxBackupIndex=1
 log4j.appender.appdaily.layout=org.apache.log4j.PatternLayout
-log4j.appender.appdaily.layout.ConversionPattern=%d{ISO8601} %-5p [%c{1}] %m%n
+log4j.appender.appdaily.layout.ConversionPattern=%d{ISO8601} %-5p [%c] %m%n
 
 log4j.appender.tweetdaily=org.apache.log4j.DailyRollingFileAppender
 log4j.appender.tweetdaily.File=log/tweet-mention.log
