@@ -1,6 +1,7 @@
 /bin/*.jar
 /log
 !/log/.gitkeep
+!*.default
 *~
 .classpath
 .class
@@ -10,4 +11,5 @@
 .ant-targets-build.xml
 /twitter-daemon/bin
 /src
-
+/config
+/config.d
